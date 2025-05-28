@@ -1,0 +1,57 @@
+{
+  "name": "emoji-domains",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A SaaS platform for emoji domain name registration and management",
+  "keywords": ["emoji", "domains", "punycode", "IDN", "internationalized-domains"],
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/emoji-domains",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/emoji-domains.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/emoji-domains/issues"
+  },
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "lucide-react": "^0.263.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src/**/*.{js,jsx}",
+    "format": "prettier --write src/**/*.{js,jsx,css,md}"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "eslint": "^8.19.0",
+    "prettier": "^2.7.1"
+  }
+}

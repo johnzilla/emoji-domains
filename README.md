@@ -154,8 +154,7 @@ If you have any questions or need help getting started:
 
 - 📧 Email: support@emoji-domains.com
 - 🐛 Issues: [GitHub Issues](https://github.com/johnzilla/emoji-domains/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/johnzilla/emoji-domains/discussions)
 
 ---
 
-**Made with ❤️ for the creative web**
+**Made with ❤️ for the open internet**

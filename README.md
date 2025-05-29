@@ -22,7 +22,7 @@ A modern SaaS platform for emoji domain name registration and management. Conver
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/emoji-domains.git
+git clone https://github.com/johnzilla/emoji-domains.git
 cd emoji-domains
 ```
 
@@ -153,8 +153,8 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 If you have any questions or need help getting started:
 
 - 📧 Email: support@emoji-domains.com
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/emoji-domains/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/emoji-domains/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/johnzilla/emoji-domains/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/johnzilla/emoji-domains/discussions)
 
 ---
 

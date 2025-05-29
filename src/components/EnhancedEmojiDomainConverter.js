@@ -13,7 +13,6 @@ const EnhancedEmojiDomainConverter = () => {
   // New state for domain availability
   const [availabilityResults, setAvailabilityResults] = useState({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [selectedTLD, setSelectedTLD] = useState('.com');
   const [popularTLDs, setPopularTLDs] = useState([]);
 
   // API base URL - adjust for your setup
@@ -96,34 +95,61 @@ const EnhancedEmojiDomainConverter = () => {
     }
   }, [API_BASE]);
 
-  // Domain availability checking
-  const checkDomainAvailability = async (domain) => {
+  // Domain availability checking for all TLDs
+  const checkAllTLDAvailability = async (baseDomain) => {
     setCheckingAvailability(true);
+    setAvailabilityResults({}); // Clear previous results
     
     try {
-      const domainToCheck = domain.includes('.') ? domain : `${domain}${selectedTLD}`;
+      // Get list of TLDs to check
+      const tldsToCheck = popularTLDs.slice(0, 8); // Check top 8 TLDs
       
-      const response = await fetch(`${API_BASE}/domains/check/${encodeURIComponent(domainToCheck)}`);
-      const data = await response.json();
+      // Create array of domains to check
+      const domainsToCheck = tldsToCheck.map(tldInfo => `${baseDomain}${tldInfo.tld}`);
       
-      if (data.success) {
-        setAvailabilityResults(prev => ({
-          ...prev,
-          [domainToCheck]: data.data
-        }));
-      } else {
-        throw new Error(data.message || 'Availability check failed');
-      }
-    } catch (error) {
-      console.error('Availability check error:', error);
-      setAvailabilityResults(prev => ({
-        ...prev,
-        [domain]: {
-          available: null,
-          error: error.message,
-          method: 'failed'
+      // Check all domains in parallel
+      const checkPromises = domainsToCheck.map(async (fullDomain) => {
+        try {
+          const response = await fetch(`${API_BASE}/domains/check/${encodeURIComponent(fullDomain)}`);
+          const data = await response.json();
+          
+          if (data.success) {
+            return { domain: fullDomain, result: data.data };
+          } else {
+            return { 
+              domain: fullDomain, 
+              result: { 
+                available: null, 
+                error: data.message || 'Check failed',
+                method: 'failed'
+              }
+            };
+          }
+        } catch (error) {
+          return { 
+            domain: fullDomain, 
+            result: { 
+              available: null, 
+              error: error.message,
+              method: 'failed'
+            }
+          };
         }
-      }));
+      });
+
+      // Wait for all checks to complete
+      const results = await Promise.all(checkPromises);
+      
+      // Update state with all results
+      const resultMap = {};
+      results.forEach(({ domain, result }) => {
+        resultMap[domain] = result;
+      });
+      
+      setAvailabilityResults(resultMap);
+      
+    } catch (error) {
+      console.error('Bulk availability check error:', error);
     } finally {
       setCheckingAvailability(false);
     }
@@ -175,7 +201,7 @@ const EnhancedEmojiDomainConverter = () => {
   };
 
   const getAvailabilityIcon = (result) => {
-    if (!result) return null;
+    if (!result) return <Clock className="w-5 h-5 text-gray-400 animate-spin" />;
     
     if (result.available === true) {
       return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -187,7 +213,7 @@ const EnhancedEmojiDomainConverter = () => {
   };
 
   const getAvailabilityText = (result) => {
-    if (!result) return '';
+    if (!result) return 'Checking...';
     
     if (result.available === true) {
       return 'Available!';
@@ -196,6 +222,23 @@ const EnhancedEmojiDomainConverter = () => {
     } else {
       return 'Unknown';
     }
+  };
+
+  const getAvailabilityColor = (result) => {
+    if (!result) return 'text-gray-500';
+    
+    if (result.available === true) {
+      return 'text-green-600';
+    } else if (result.available === false) {
+      return 'text-red-600';
+    } else {
+      return 'text-yellow-600';
+    }
+  };
+
+  const getTLDInfo = (domain) => {
+    const tld = domain.substring(domain.lastIndexOf('.'));
+    return popularTLDs.find(t => t.tld === tld) || { tld, description: 'Domain extension', price: 'Price varies' };
   };
 
   const popularEmojis = ['🏠', '🚀', '💡', '🌟', '🎯', '🔥', '💎', '🌈', '⚡', '🎨', '🎵', '🍕', '☕', '🎮', '📱', '💻'];
@@ -303,74 +346,93 @@ const EnhancedEmojiDomainConverter = () => {
                   <h3 className="text-lg font-medium text-gray-700">Check Domain Availability</h3>
                 </div>
                 
-                {/* TLD Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select TLD (Top Level Domain)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {popularTLDs.slice(0, 6).map((tldInfo) => (
-                      <button
-                        key={tldInfo.tld}
-                        onClick={() => setSelectedTLD(tldInfo.tld)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          selectedTLD === tldInfo.tld
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                        title={`${tldInfo.description} - ${tldInfo.price}`}
-                      >
-                        {tldInfo.tld}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Check Availability Button */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-6">
                   <button
-                    onClick={() => checkDomainAvailability(punycodeOutput)}
-                    disabled={checkingAvailability}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => checkAllTLDAvailability(punycodeOutput)}
+                    disabled={checkingAvailability || popularTLDs.length === 0}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                   >
                     {checkingAvailability ? (
-                      <Clock className="w-4 h-4 animate-spin" />
+                      <Clock className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Search className="w-4 h-4" />
+                      <Search className="w-5 h-5" />
                     )}
-                    {checkingAvailability ? 'Checking...' : 'Check Availability'}
+                    {checkingAvailability ? 'Checking All TLDs...' : 'Check All Popular TLDs'}
                   </button>
                   
                   <div className="text-sm text-gray-500">
-                    Will check: {punycodeOutput}{selectedTLD}
+                    Will check {popularTLDs.slice(0, 8).length} popular domain extensions
                   </div>
                 </div>
 
-                {/* Availability Results */}
-                {Object.keys(availabilityResults).length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Availability Results:</h4>
-                    {Object.entries(availabilityResults).map(([domain, result]) => (
-                      <div key={domain} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          {getAvailabilityIcon(result)}
-                          <span className="font-mono text-sm">{domain}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium ${
-                            result.available === true ? 'text-green-600' :
-                            result.available === false ? 'text-red-600' : 'text-yellow-600'
-                          }`}>
-                            {getAvailabilityText(result)}
+                {/* Availability Results Grid */}
+                {(Object.keys(availabilityResults).length > 0 || checkingAvailability) && (
+                  <div className="space-y-3">
+                    <h4 className="text-md font-medium text-gray-700 mb-3">
+                      Availability Results for: {punycodeOutput}
+                    </h4>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+                      {popularTLDs.slice(0, 8).map((tldInfo) => {
+                        const fullDomain = `${punycodeOutput}${tldInfo.tld}`;
+                        const result = availabilityResults[fullDomain];
+                        
+                        return (
+                          <div 
+                            key={tldInfo.tld} 
+                            className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                              result?.available === true ? 'border-green-200 bg-green-50' :
+                              result?.available === false ? 'border-red-200 bg-red-50' :
+                              result?.available === null ? 'border-yellow-200 bg-yellow-50' :
+                              'border-gray-200 bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {getAvailabilityIcon(result)}
+                              <div>
+                                <div className="font-mono text-sm font-medium text-gray-800">
+                                  {fullDomain}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {tldInfo.description} • {tldInfo.price}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="text-right">
+                              <div className={`text-sm font-semibold ${getAvailabilityColor(result)}`}>
+                                {getAvailabilityText(result)}
+                              </div>
+                              {result && result.method && (
+                                <div className="text-xs text-gray-400">
+                                  via {result.method}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Summary Stats */}
+                    {!checkingAvailability && Object.keys(availabilityResults).length > 0 && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="text-sm text-blue-800">
+                          <strong>Summary:</strong> {' '}
+                          <span className="text-green-600 font-medium">
+                            {Object.values(availabilityResults).filter(r => r?.available === true).length} Available
                           </span>
-                          {result.method && (
-                            <span className="text-xs text-gray-400">
-                              via {result.method}
-                            </span>
-                          )}
+                          {' • '}
+                          <span className="text-red-600 font-medium">
+                            {Object.values(availabilityResults).filter(r => r?.available === false).length} Taken
+                          </span>
+                          {' • '}
+                          <span className="text-yellow-600 font-medium">
+                            {Object.values(availabilityResults).filter(r => r?.available === null).length} Unknown
+                          </span>
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>

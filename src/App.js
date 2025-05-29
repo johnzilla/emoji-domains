@@ -1,11 +1,11 @@
 import React from 'react';
 import './App.css';
-import EmojiDomainConverter from './components/EmojiDomainConverter';
+import EnhancedEmojiDomainConverter from './components/EnhancedEmojiDomainConverter';
 
 function App() {
   return (
     <div className="App">
-      <EmojiDomainConverter />
+      <EnhancedEmojiDomainConverter />
     </div>
   );
 }

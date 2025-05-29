@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Copy, ArrowUpDown, Globe, Search, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Copy, Globe, Search, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const EnhancedEmojiDomainConverter = () => {
   const [emojiInput, setEmojiInput] = useState('');
@@ -20,11 +20,7 @@ const EnhancedEmojiDomainConverter = () => {
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
   // Fetch popular TLDs on component mount
-  useEffect(() => {
-    fetchPopularTLDs();
-  }, []);
-
-  const fetchPopularTLDs = async () => {
+  const fetchPopularTLDs = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/domains/popular-tlds`);
       const data = await response.json();
@@ -41,10 +37,14 @@ const EnhancedEmojiDomainConverter = () => {
         { tld: '.ws', description: 'Many emoji domains available', price: '$30/year' }
       ]);
     }
-  };
+  }, [API_BASE]);
+
+  useEffect(() => {
+    fetchPopularTLDs();
+  }, [fetchPopularTLDs]);
 
   // Enhanced conversion functions using backend API
-  const convertEmojiToPunycode = async (input) => {
+  const convertEmojiToPunycode = useCallback(async (input) => {
     if (!input.trim()) return '';
     
     try {
@@ -70,9 +70,9 @@ const EnhancedEmojiDomainConverter = () => {
       console.error('Conversion error:', error);
       return 'Conversion failed';
     }
-  };
+  }, [API_BASE]);
 
-  const convertPunycodeToEmoji = async (input) => {
+  const convertPunycodeToEmoji = useCallback(async (input) => {
     if (!input.trim()) return '';
     
     try {
@@ -94,7 +94,7 @@ const EnhancedEmojiDomainConverter = () => {
       console.error('Conversion error:', error);
       return 'Conversion failed';
     }
-  };
+  }, [API_BASE]);
 
   // Domain availability checking
   const checkDomainAvailability = async (domain) => {
@@ -142,7 +142,7 @@ const EnhancedEmojiDomainConverter = () => {
       setValidationMessage('');
       setAvailabilityResults({});
     }
-  }, [emojiInput, activeTab]);
+  }, [emojiInput, activeTab, convertEmojiToPunycode]);
 
   // Handle punycode to emoji conversion
   useEffect(() => {
@@ -155,7 +155,7 @@ const EnhancedEmojiDomainConverter = () => {
     } else if (activeTab === 'puny-to-emoji') {
       setEmojiOutput('');
     }
-  }, [punycodeInput, activeTab]);
+  }, [punycodeInput, activeTab, convertPunycodeToEmoji]);
 
   const copyToClipboard = async (text, type) => {
     try {
